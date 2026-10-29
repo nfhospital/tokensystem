@@ -198,12 +198,16 @@
         submitTokenRequest('createEmergency');
     });
 
-    function submitTokenRequest(actionType) {
+function submitTokenRequest(actionType) {
         const name = document.getElementById('patientName').value.trim();
         document.getElementById('loader').style.display = 'block';
         document.getElementById('result').style.display = 'none';
         
-        fetch(`${APPS_SCRIPT_URL}?action=${actionType}&name=${encodeURIComponent(name)}`)
+        // PUDHU FETCH CODE
+        fetch(`${APPS_SCRIPT_URL}?action=${actionType}&name=${encodeURIComponent(name)}`, {
+            redirect: 'follow',
+            method: 'GET'
+        })
             .then(res => res.json())
             .then(res => {
                 document.getElementById('loader').style.display = 'none';
