@@ -3,35 +3,164 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>NF Token System</title>
-
+  <title>Pharmacy TV Display</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #ffffff;
+    body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Inter', sans-serif;}
+    #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;}
+    
+    #status-light { 
+      position: fixed; top: 20px; right: 20px; width: 15px; height: 15px; 
+      background-color: #ef4444; border-radius: 50%; z-index: 2000; 
     }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
+    #status-light.ok { background-color: #16a34a; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(22, 163, 74, 0); } }
+    
+    #system-message { 
+      display: flex; justify-content: center; align-items: center; flex-direction: column; 
+      width: 100%; height: 100vh; color: white; z-index: 50; position: relative;
+    }
+    
+    /* Neuro Foundation Brand Color Integration */
+    #popup { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(7, 140, 128, 0.95); /* Brand Color #078c80 */
+      color: white; display: none; 
+      justify-content: center; align-items: center; flex-direction: column; 
+      text-align: center; z-index: 1000; backdrop-filter: blur(10px);
+    }
+    #popup .ready-text { font-size: 5vw; font-weight: 600; margin-bottom: 2vh; color: #ccfbf1; letter-spacing: 2px; text-transform: uppercase;}
+    #popup .token-number { font-size: 25vw; font-weight: 800; line-height: 1; text-shadow: 0 20px 40px rgba(0,0,0,0.4);}
+    #popup .patient-name { font-size: 6vw; font-weight: 600; margin-top: 20px;}
+    
+    #unmute-button { 
+      display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+      z-index: 5000; padding: 25px 50px; font-size: 2rem; cursor: pointer; 
+      background: white; color: #078c80; border-radius: 50px; border:none; 
+      font-weight:800; box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-transform: uppercase;
     }
   </style>
 </head>
-
 <body>
 
-  <iframe
-    src="https://script.google.com/macros/s/AKfycbz477PDgK2gjah9m3zPJ-CtrUpJj2-65Osbeq2Y9enVRdai9mIvxkL9jWZzs7TJpEyd/exec"
-    allow="fullscreen"
-    loading="eager">
-  </iframe>
+  <div id="status-light" title="System Status"></div>
+  <div id="player"></div>
+  <div id="system-message"><h1>Pharmacy Display</h1><p>Initializing System...</p></div>
+  
+  <div id="popup">
+    <div class="ready-text">Please Collect Medicine</div>
+    <div id="popup-token" class="token-number"></div>
+    <div id="popup-name" class="patient-name"></div>
+  </div>
+  
+  <button id="unmute-button">Start Display</button>
+  <audio id="voice-player" style="display:none;" preload="auto"></audio>
 
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    // ==========================================
+    // INGA UNGA APPS SCRIPT URL-A PASTE PANNUNGA
+    // ==========================================
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXuQyAIC5x_YtxFJN8tvv6ppoZaDCXdxDdwJgbVHjPiVlnHs_lFJLea-c4uceVfJjx/exec";
+    
+    let player;
+    let currentCycleIndex = 0; 
+    let userInteracted = false;
+
+    // 1. Fetch Videos from Backend
+    function onYouTubeIframeAPIReady() { 
+        fetch(APPS_SCRIPT_URL + '?api=true&action=getVideos')
+            .then(res => res.json())
+            .then(data => setupPlayer(data.videos))
+            .catch(handleDisplayError);
+    }
+
+    function setupPlayer(videoList) {
+        if (videoList && videoList.length > 0) {
+            player = new YT.Player('player', {
+                playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': videoList.join(','), 'mute': 0, 'modestbranding': 1 },
+                events: { 'onReady': () => document.getElementById('system-message').style.display = 'none', 'onError': handleDisplayError, 'onStateChange': onPlayerStateChange }
+            });
+        } else {
+            document.getElementById('system-message').querySelector('p').innerText = "System Active. (No Videos Loaded)";
+            setupInteractivity();
+        }
+    }
+
+    function onPlayerStateChange(event) {
+        if (event.data === YT.PlayerState.UNSTARTED && !userInteracted) {
+            setupInteractivity();
+        }
+    }
+
+    function setupInteractivity() {
+        const unmuteBtn = document.getElementById('unmute-button');
+        unmuteBtn.style.display = 'block';
+        unmuteBtn.onclick = () => { 
+            if(player && typeof player.playVideo === 'function') player.playVideo(); 
+            unmuteBtn.style.display = 'none'; 
+            userInteracted = true; 
+            document.getElementById('status-light').classList.add('ok');
+            
+            // Unlock Audio
+            const voicePlayer = document.getElementById('voice-player');
+            voicePlayer.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+            voicePlayer.play().catch(e => console.log(e));
+            
+            setInterval(checkForReadyTokens, 15000); 
+            checkForReadyTokens(); 
+        };
+    }
+
+    function checkForReadyTokens() {
+        if (document.getElementById('popup').style.display === 'flex') return;
+        
+        fetch(APPS_SCRIPT_URL + '?api=true&action=getReadyTokens')
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) processReadyTokens(data.tokens);
+            })
+            .catch(handleDisplayError);
+    }
+
+    function processReadyTokens(tokensArray) {
+        if (!tokensArray || tokensArray.length === 0) {
+            currentCycleIndex = 0; 
+            return;
+        }
+        if (currentCycleIndex >= tokensArray.length) currentCycleIndex = 0;
+        
+        const tokenToDisplay = tokensArray[currentCycleIndex];
+        currentCycleIndex++; 
+        displayTokenPopup(tokenToDisplay);
+    }
+
+    function displayTokenPopup(tokenData) {
+        if (player && typeof player.pauseVideo === 'function') player.pauseVideo();
+        
+        document.getElementById('popup-token').innerText = `#${tokenData.token}`;
+        document.getElementById('popup-name').innerText = tokenData.name;
+        document.getElementById('popup').style.display = 'flex';
+        
+        setTimeout(() => {
+            const voicePlayer = document.getElementById('voice-player');
+            const textToSpeak = "Token number " + tokenData.token;
+            voicePlayer.src = "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-IN&q=" + encodeURIComponent(textToSpeak);
+            voicePlayer.play().catch(e => console.log(e));
+        }, 500);
+
+        setTimeout(() => {
+            document.getElementById('popup').style.display = 'none';
+            if (player && typeof player.playVideo === 'function') player.playVideo();
+        }, 10000); 
+    }
+
+    function handleDisplayError(error) {
+        console.log('Error:', error);
+        document.getElementById('status-light').style.backgroundColor = '#ef4444';
+        setTimeout(() => document.getElementById('status-light').style.backgroundColor = '#16a34a', 2000);
+    }
+  </script>
 </body>
 </html>
