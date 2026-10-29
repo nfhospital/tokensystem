@@ -8,9 +8,9 @@
   
   <style>
     :root { 
-      --primary: #078c80; /* Brand Color */
+      --primary: #078c80; 
       --success: #16a34a; 
-      --danger: #ef4444; /* Emergency Color */
+      --danger: #ef4444; 
       --dark: #1e293b; 
       --bg: #f1f5f9; 
       --card-bg: #ffffff;
@@ -87,7 +87,7 @@
     #system-message { display: flex; justify-content: center; align-items: center; flex-direction: column; width: 100%; height: 100vh; color: white; z-index: 50; position: relative;}
     
     #popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 140, 128, 0.96); color: white; display: none; justify-content: center; align-items: center; flex-direction: column; text-align: center; z-index: 1000; backdrop-filter: blur(10px); }
-    #popup.emergency-popup { background: rgba(220, 38, 38, 0.96); } /* Red Background for Emergency */
+    #popup.emergency-popup { background: rgba(220, 38, 38, 0.96); } 
     #popup .ready-text { font-size: 5vw; font-weight: 600; margin-bottom: 2vh; color: #ccfbf1; text-transform: uppercase;}
     #popup .token-number { font-size: 25vw; font-weight: 800; line-height: 1; text-shadow: 0 20px 40px rgba(0,0,0,0.4);}
     #popup .patient-name { font-size: 6vw; font-weight: 600; margin-top: 20px;}
@@ -161,7 +161,7 @@
 
   <script>
     // =========================================================================
-    // INGA UNGA PUDHU GOOGLE APPS SCRIPT (WEB APP) URL-A PASTE PANNUNGA 👇👇👇
+    // INGA UNGA PUDHU GOOGLE APPS SCRIPT (WEB APP) URL-A PASTE PANNUNGA 👇
     // =========================================================================
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXuQyAIC5x_YtxFJN8tvv6ppoZaDCXdxDdwJgbVHjPiVlnHs_lFJLea-c4uceVfJjx/exec";
 
@@ -198,16 +198,13 @@
         submitTokenRequest('createEmergency');
     });
 
-function submitTokenRequest(actionType) {
+    function submitTokenRequest(actionType) {
         const name = document.getElementById('patientName').value.trim();
         document.getElementById('loader').style.display = 'block';
         document.getElementById('result').style.display = 'none';
         
-        // PUDHU FETCH CODE
-        fetch(`${APPS_SCRIPT_URL}?action=${actionType}&name=${encodeURIComponent(name)}`, {
-            redirect: 'follow',
-            method: 'GET'
-        })
+        // BUG FIX: Simple fetch to avoid preflight issues
+        fetch(`${APPS_SCRIPT_URL}?action=${actionType}&name=${encodeURIComponent(name)}`)
             .then(res => res.json())
             .then(res => {
                 document.getElementById('loader').style.display = 'none';
@@ -224,7 +221,7 @@ function submitTokenRequest(actionType) {
             })
             .catch(err => {
                 document.getElementById('loader').style.display = 'none';
-                document.getElementById('result').innerHTML = `❌ Connection Error`;
+                document.getElementById('result').innerHTML = `❌ Connection Error: Data saved, but could not read response. Refresh page.`;
                 document.getElementById('result').className = 'result error';
                 document.getElementById('result').style.display = 'block';
             });
@@ -356,7 +353,7 @@ function submitTokenRequest(actionType) {
         
         setTimeout(() => {
             const vp = document.getElementById('voice-player');
-            // Emergency voice logic
+            // Alagaana Voice Announcement Logic
             let voiceText = isEmergency ? 
                 ("Emergency token number " + t.token.replace('E', '')) : 
                 ("Token number " + t.token);
