@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
   <style>
     :root { 
-      --brand: #078c80; /* Neuro Foundation Color */
+      --brand: #078c80; /* Neuro Foundation Brand Color */
       --brand-hover: #067268;
       --danger: #ef4444; 
       --danger-hover: #dc2626;
@@ -17,7 +17,7 @@
     }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; }
     
-    /* Professional Navbar */
+    /* Navbar */
     .navbar { background: var(--brand); padding: 15px 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; justify-content: center; gap: 10px; position: sticky; top: 0; z-index: 100; }
     .nav-btn { background: rgba(255,255,255,0.15); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; text-decoration: none; font-size: 1rem; }
     .nav-btn:hover, .nav-btn.active { background: white; color: var(--brand); }
@@ -25,7 +25,7 @@
     .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
     .card { background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
     
-    /* Inputs & Buttons */
+    /* Inputs */
     .input-group { margin-bottom: 25px; }
     .input-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #475569; }
     input[type="text"] { width: 100%; padding: 15px; border: 2px solid #cbd5e1; border-radius: 10px; font-size: 1.1rem; box-sizing: border-box; transition: 0.3s; background: #f8fafc; }
@@ -54,25 +54,20 @@
     .actions button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; color: white; }
     .btn-ready { background: var(--brand); }
     .btn-clear { background: #94a3b8; }
-    .btn-clear:hover { background: #64748b; }
     
     .view-section { display: none; animation: fadeIn 0.3s ease; }
     .view-active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Loader */
     .loader { display: none; text-align: center; padding: 20px; color: #64748b; font-weight: 600; }
-    .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(7,140,128,0.2); border-top-color: var(--brand); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* TV Display CSS */
+    /* TV Display CSS - Clean & Fullscreen */
     body.tv-mode .navbar { display: none; }
     body.tv-mode { background: #000; overflow: hidden; }
     #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-    #popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 140, 128, 0.95); color: white; display: none; justify-content: center; align-items: center; flex-direction: column; text-align: center; z-index: 1000; backdrop-filter: blur(10px); }
-    #popup.popup-emergency { background: rgba(220, 38, 38, 0.95); }
+    #popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 140, 128, 0.96); color: white; display: none; justify-content: center; align-items: center; flex-direction: column; text-align: center; z-index: 1000; backdrop-filter: blur(10px); }
+    #popup.popup-emergency { background: rgba(239, 68, 68, 0.96); } /* Red background for emergency */
     #popup .token-number { font-size: 25vw; font-weight: 800; line-height: 1; text-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-    #unmute-button { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; padding: 20px 40px; font-size: 2rem; border-radius: 50px; background: white; color: black; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
   </style>
 </head>
 <body>
@@ -118,13 +113,11 @@
       <button onclick="loadTokens()" style="padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">🔄 Refresh</button>
     </div>
     
-    <div id="loader" class="loader">
-      <div class="spinner"></div><br>Syncing...
-    </div>
+    <div id="loader" class="loader">Syncing...</div>
     <div id="tokenGrid" class="token-grid"></div>
   </div>
 
-  <!-- TV DISPLAY -->
+  <!-- TV DISPLAY (No "Tap to Start" button anymore!) -->
   <div id="view-tv" class="view-section">
     <div id="player"></div>
     <div id="popup">
@@ -132,7 +125,6 @@
       <div id="popup-token" class="token-number"></div>
       <div id="popup-name" style="font-size: 5vw; margin-top: 20px; font-weight: 600;"></div>
     </div>
-    <!-- "Tap to Start" button completely removed! -->
   </div>
 
   <script>
@@ -165,7 +157,7 @@
       }
     }
 
-    // --- 2. ROBUST API CALL ---
+    // --- 2. API CALL ---
     async function apiCall(action, params = {}) {
       try {
         const url = new URL(API_URL);
@@ -244,7 +236,7 @@
     
     setInterval(() => { if(window.location.hash.replace('#', '') === 'pharmacy') loadTokens(); }, 6000);
 
-    // --- 5. TV LOGIC (ULTIMATE AUTOMATIC SYNC & MANUAL QUEUE) ---
+    // --- 5. TV LOGIC (ULTIMATE SYNC & AI VOICE) ---
     let player;
     let previousReadyTokens = [];
     let priorityQueue = [];
@@ -255,7 +247,6 @@
     let isFetchingVideos = false;
     let isDisplayingToken = false; 
     
-    // Manual Video Queue Logic
     let videoList = []; 
     let currentVidIndex = 0; 
     let currentVideoStateStr = ""; 
@@ -276,31 +267,26 @@
         currentVideoStateStr = videos.join(',');
         currentVidIndex = 0;
         
-        // Playlist illaama Single Video-va load pandrom (No extra Ads, strict order)
+        // Load First Video
         player = new YT.Player('player', {
           videoId: videoList[currentVidIndex], 
           playerVars: { 'autoplay': 1, 'controls': 0, 'mute': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1 },
           events: { 
+             'onReady': (e) => { e.target.playVideo(); }, // Auto-play enabled automatically
              'onStateChange': onPlayerStateChange 
           }
         });
       }
       
       setInterval(checkReadyTokens, 15000); 
-      setInterval(checkVideoUpdates, 120000); // EXACT 2 MINUTES (120,000 ms) sync
+      setInterval(checkVideoUpdates, 120000); // 2 Minutes Sync
     }
 
-    // Manual-a adutha video-va play panna logic
+    // Manual Video Queue (Loops automatically in order)
     function onPlayerStateChange(e) {
-      // 0 means YT.PlayerState.ENDED (Oru video mudinjavudane)
-      if (e.data === 0) {
+      if (e.data === 0) { // Video Ended
         currentVidIndex++;
-        
-        // List mudinjiducha nu check panni first la irunthu loop pandrom
-        if (currentVidIndex >= videoList.length) {
-           currentVidIndex = 0;
-        }
-        
+        if (currentVidIndex >= videoList.length) currentVidIndex = 0;
         player.loadVideoById(videoList[currentVidIndex]);
       }
     }
@@ -314,16 +300,14 @@
         if (Array.isArray(videos) && videos.length > 0) {
           const newVideoStateStr = videos.join(',');
           
-          // Sheet-la maattram irunthaal mattum
+          // Apply changes only if Sheet is updated
           if (newVideoStateStr !== currentVideoStateStr) {
             currentVideoStateStr = newVideoStateStr;
             videoList = videos;
-            currentVidIndex = 0; // Puthu list vantha udane 1st video la irunthu play aagum
+            currentVidIndex = 0; 
             player.loadVideoById(videoList[currentVidIndex]);
           }
         }
-      } catch (error) {
-        console.error("Video Update Error");
       } finally {
         isFetchingVideos = false;
       }
@@ -362,22 +346,19 @@
       }
     }
 
-function speakWithProfessionalFemaleVoice(tokenText) {
-      if ('speechSynthesis' in window) {
-         window.speechSynthesis.cancel(); 
-      }
+    // Google Translate TTS Premium AI Female Voice (No robotic sound)
+    function speakWithProfessionalFemaleVoice(tokenText) {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel(); 
       
-      // tl=en-US nu maathiyachu, ithu kandippa female voice thaan tharum
       const googleAIVoiceUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=${encodeURIComponent(tokenText)}`;
-      
       const audio = new Audio(googleAIVoiceUrl);
       audio.volume = 1.0;
       
       audio.play().catch(error => {
-         // Internet issue iruntha strict female fallback
+         // Fallback if internet blocks direct audio play
          let msg = new SpeechSynthesisUtterance(tokenText);
          let voices = window.speechSynthesis.getVoices();
-         let femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google US English') || v.name.includes('Google UK English Female'));
+         let femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google US English'));
          if(femaleVoice) msg.voice = femaleVoice;
          window.speechSynthesis.speak(msg);
       });
@@ -395,19 +376,23 @@ function speakWithProfessionalFemaleVoice(tokenText) {
         popup.classList.remove('popup-emergency');
       }
       
+      // FIX: Added Space between '#' and Token Number
       document.getElementById('popup-token').innerText = String(t.token).startsWith('EM') ? t.token : '# ' + t.token;
       document.getElementById('popup-name').innerText = t.name;
       
       clearTimeout(popupTimeout);
 
       popup.style.display = 'flex';
+      
+      // Trigger AI Voice
       speakWithProfessionalFemaleVoice("Token number " + t.token);
       
+      // Exactly 10 Seconds later
       popupTimeout = setTimeout(() => {
         popup.style.display = 'none';
         if(player && typeof player.playVideo === 'function') player.playVideo();
         
-        setTimeout(() => { isDisplayingToken = false; }, 1000); 
+        setTimeout(() => { isDisplayingToken = false; }, 1000); // 1s Lock Relax
       }, 10000); 
     }
   </script>
