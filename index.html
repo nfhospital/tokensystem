@@ -244,17 +244,17 @@
     
     setInterval(() => { if(window.location.hash.replace('#', '') === 'pharmacy') loadTokens(); }, 6000);
 
-// --- 5. TV LOGIC (STRICT SYNC & LOCK SYSTEM) ---
+// --- 5. TV LOGIC (STRICT SYNC & AUTO PLAYLIST FIX) ---
     let player;
     let systemInteracted = false;
     let previousReadyTokens = [];
     let priorityQueue = [];
     let loopIndex = 0;
     
-    // New variables for Sync control
+    // Variables for Sync control
     let popupTimeout;
     let isFetching = false;
-    let isDisplayingToken = false; // MUKKIYAMANA LOCK: Oru time-la oru token than work aaganum
+    let isDisplayingToken = false; // MUKKIYAMANA LOCK
     let currentPlaylist = ""; 
 
     function initTV() {
@@ -282,8 +282,8 @@
         });
       }
       
-      setInterval(checkReadyTokens, 15000); 
-      setInterval(checkVideoUpdates, 60000); 
+      setInterval(checkReadyTokens, 15000); // Check tokens every 15s
+      setInterval(checkVideoUpdates, 30000); // Check new videos every 30s
       
       document.getElementById('unmute-button').onclick = () => {
          systemInteracted = true;
@@ -295,16 +295,24 @@
       };
     }
 
+    // AUTOMATIC VIDEO SYNC (Exact order from Sheet)
     async function checkVideoUpdates() {
-      if(!player || isFetching || isDisplayingToken) return;
+      // Token display aagitu irunthalo, player ready aagalanaalo disturb panna koodathu
+      if(!player || typeof player.loadPlaylist !== 'function' || isFetching || isDisplayingToken) return;
       
       try {
         const videos = await apiCall('getVideoUrls');
         if (Array.isArray(videos) && videos.length > 0) {
           const newPlaylist = videos.join(',');
+          
+          // Sheet-la maattram irunthaal mattum TV-la playlist maaranum
           if (newPlaylist !== currentPlaylist) {
             currentPlaylist = newPlaylist;
+            
+            // Exact Sheet Order-la puthu playlist-a load pandrom
             player.loadPlaylist(videos);
+            player.setLoop(true); // Loop aagara feature-a enable pandrom
+            player.playVideo();
           }
         }
       } catch (error) {
@@ -313,7 +321,6 @@
     }
 
     async function checkReadyTokens() {
-      // LOCK CHECK: Display aagitu iruntha update aaga koodathu
       if (isDisplayingToken || isFetching) return; 
       
       isFetching = true;
@@ -349,7 +356,6 @@
     function speakWithFemaleVoice(tokenText) {
       if (!('speechSynthesis' in window)) return;
       
-      // Pazhaya voice queue-a force-a delete pandrom
       window.speechSynthesis.cancel();
       
       setTimeout(() => {
@@ -373,7 +379,7 @@
     }
 
     function displayPopup(t) {
-      isDisplayingToken = true; // LOCK ENABLED
+      isDisplayingToken = true; 
       
       if(player && typeof player.pauseVideo === 'function') player.pauseVideo();
       
@@ -392,7 +398,6 @@
       
       clearTimeout(popupTimeout);
 
-      // Display-a kaatina piragu exact-a voice trigger pandrom
       popup.style.display = 'flex';
       speakWithFemaleVoice("Token number " + t.token);
       
@@ -400,8 +405,8 @@
         popup.style.display = 'none';
         if(player && typeof player.playVideo === 'function') player.playVideo();
         
-        isDisplayingToken = false; // LOCK DISABLED (Only now next token can show)
-      }, 10000); // Exact-a 10 second appuram close aagum
+        isDisplayingToken = false; 
+      }, 10000); 
     }
   </script>
 </body>
