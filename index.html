@@ -244,7 +244,7 @@
     
     setInterval(() => { if(window.location.hash.replace('#', '') === 'pharmacy') loadTokens(); }, 6000);
 
-    // --- 5. TV LOGIC (PERFECT SYNC FIXES APPLIED) ---
+    // --- 5. TV LOGIC (PERFECT SYNC & AUTO VIDEO UPDATE) ---
     let player;
     let systemInteracted = false;
     let previousReadyTokens = [];
@@ -254,6 +254,7 @@
     // New variables for Sync control
     let popupTimeout;
     let isFetching = false;
+    let currentPlaylist = ""; // Puthiyathu: Video Playlist track panna
 
     function initTV() {
       if(document.getElementById('yt-api-script')) return;
@@ -267,8 +268,9 @@
     async function onYouTubeIframeAPIReady() {
       const videos = await apiCall('getVideoUrls');
       if (Array.isArray(videos) && videos.length > 0) {
+        currentPlaylist = videos.join(',');
         player = new YT.Player('player', {
-          playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': videos.join(','), 'mute': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3 },
+          playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': currentPlaylist, 'mute': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3 },
           events: { 'onStateChange': (e) => { 
             if ((e.data === YT.PlayerState.UNSTARTED || e.data === YT.PlayerState.PAUSED) && !systemInteracted) {
                 document.getElementById('unmute-button').style.display = 'block';
@@ -278,7 +280,9 @@
           }}
         });
       }
-      setInterval(checkReadyTokens, 15000);
+      
+      setInterval(checkReadyTokens, 15000); // Every 15s token check
+      setInterval(checkVideoUpdates, 60000); // NEW: Every 60s video check
       
       document.getElementById('unmute-button').onclick = () => {
          systemInteracted = true;
@@ -290,8 +294,28 @@
       };
     }
 
+    // PUTHU FUNCTION: Background video check
+    async function checkVideoUpdates() {
+      // System update aagitu irunthalo allathu player innum load aagalayo check panna venam
+      if(!player || isFetching || document.getElementById('popup').style.display === 'flex') return;
+      
+      try {
+        const videos = await apiCall('getVideoUrls');
+        if (Array.isArray(videos) && videos.length > 0) {
+          const newPlaylist = videos.join(',');
+          
+          // Sheet-la pudhu video link potruntha mattum TV-la playlist maaranum
+          if (newPlaylist !== currentPlaylist) {
+            currentPlaylist = newPlaylist;
+            player.loadPlaylist(videos);
+          }
+        }
+      } catch (error) {
+        console.error("Video Update Error");
+      }
+    }
+
     async function checkReadyTokens() {
-      // OVERLAP LOCK: Screen-la popup irunthalo, allathu already fetch aagitu irunthalo thirumba fetch panna koodathu
       if (document.getElementById('popup').style.display === 'flex' || isFetching) return; 
       
       isFetching = true;
@@ -346,7 +370,6 @@
     }
 
     function displayPopup(t) {
-      // 1. Pause Video completely
       if(player && typeof player.pauseVideo === 'function') player.pauseVideo();
       
       document.getElementById('unmute-button').style.display = 'none'; 
@@ -359,29 +382,23 @@
         popup.classList.remove('popup-emergency');
       }
       
+      // FIX: '#' kum token number kum space add panniyachu
       document.getElementById('popup-token').innerText = String(t.token).startsWith('EM') ? t.token : '# ' + t.token;
       document.getElementById('popup-name').innerText = t.name;
       
-      // 2. CLEAR ALL PREVIOUS TIMERS & VOICES (This strictly ties voice and display together)
       clearTimeout(popupTimeout);
       if ('speechSynthesis' in window) {
          window.speechSynthesis.cancel();
       }
 
-      // 3. SHOW DISPLAY FIRST
       popup.style.display = 'flex';
       
-      // 4. TRIGGER VOICE EXACTLY WHEN DISPLAY APPEARS
       setTimeout(() => {
         speakWithFemaleVoice("Token number " + t.token);
       }, 100);
       
-      // 5. REMOVE DISPLAY EXACTLY AFTER 10 SECONDS
       popupTimeout = setTimeout(() => {
         popup.style.display = 'none';
         if(player && typeof player.playVideo === 'function') player.playVideo();
       }, 10000);
     }
-  </script>
-</body>
-</html>
