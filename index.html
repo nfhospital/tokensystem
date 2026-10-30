@@ -244,7 +244,7 @@
     
     setInterval(() => { if(window.location.hash.replace('#', '') === 'pharmacy') loadTokens(); }, 6000);
 
-  // --- 5. TV LOGIC (STRICT SYNC & LOCK SYSTEM) ---
+// --- 5. TV LOGIC (PERFECT SYNC & AUTO VIDEO UPDATE) ---
     let player;
     let systemInteracted = false;
     let previousReadyTokens = [];
@@ -254,8 +254,7 @@
     // New variables for Sync control
     let popupTimeout;
     let isFetching = false;
-    let isDisplayingToken = false; // MUKKIYAMANA LOCK: Oru time-la oru token than work aaganum
-    let currentPlaylist = ""; 
+    let currentPlaylist = ""; // Puthiyathu: Video Playlist track panna
 
     function initTV() {
       if(document.getElementById('yt-api-script')) return;
@@ -282,26 +281,30 @@
         });
       }
       
-      setInterval(checkReadyTokens, 15000); 
-      setInterval(checkVideoUpdates, 60000); 
+      setInterval(checkReadyTokens, 15000); // Every 15s token check
+      setInterval(checkVideoUpdates, 60000); // NEW: Every 60s video check
       
       document.getElementById('unmute-button').onclick = () => {
          systemInteracted = true;
          document.getElementById('unmute-button').style.display = 'none';
          if(player && typeof player.playVideo === 'function') player.playVideo();
          if ('speechSynthesis' in window) {
-            let msg = new SpeechSynthesisUtterance(" "); msg.volume = 0; window.speechSynthesis.speak(msg);
+            let msg = new SpeechSynthesisUtterance("System active"); msg.volume = 0; window.speechSynthesis.speak(msg);
          }
       };
     }
 
+    // PUTHU FUNCTION: Background video check
     async function checkVideoUpdates() {
-      if(!player || isFetching || isDisplayingToken) return;
+      // System update aagitu irunthalo allathu player innum load aagalayo check panna venam
+      if(!player || isFetching || document.getElementById('popup').style.display === 'flex') return;
       
       try {
         const videos = await apiCall('getVideoUrls');
         if (Array.isArray(videos) && videos.length > 0) {
           const newPlaylist = videos.join(',');
+          
+          // Sheet-la pudhu video link potruntha mattum TV-la playlist maaranum
           if (newPlaylist !== currentPlaylist) {
             currentPlaylist = newPlaylist;
             player.loadPlaylist(videos);
@@ -313,8 +316,7 @@
     }
 
     async function checkReadyTokens() {
-      // LOCK CHECK: Display aagitu iruntha update aaga koodathu
-      if (isDisplayingToken || isFetching) return; 
+      if (document.getElementById('popup').style.display === 'flex' || isFetching) return; 
       
       isFetching = true;
       try {
@@ -349,32 +351,25 @@
     function speakWithFemaleVoice(tokenText) {
       if (!('speechSynthesis' in window)) return;
       
-      // Pazhaya voice queue-a force-a delete pandrom
-      window.speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance(tokenText);
+      msg.rate = 0.85; 
+      msg.pitch = 1.1; 
       
-      setTimeout(() => {
-          const msg = new SpeechSynthesisUtterance(tokenText);
-          msg.rate = 0.85; 
-          msg.pitch = 1.1; 
-          
-          let voices = window.speechSynthesis.getVoices();
-          let femaleVoice = voices.find(v => 
-             v.name.includes('Google UK English Female') || 
-             v.name.includes('Google US English') ||
-             v.name.includes('Zira') ||
-             (v.lang === 'en-IN' && v.name.includes('Female'))
-          );
-          
-          if (!femaleVoice) femaleVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('Female'));
-          if (femaleVoice) msg.voice = femaleVoice;
-          
-          window.speechSynthesis.speak(msg);
-      }, 100);
+      let voices = window.speechSynthesis.getVoices();
+      let femaleVoice = voices.find(v => 
+         v.name.includes('Google UK English Female') || 
+         v.name.includes('Google US English') ||
+         v.name.includes('Zira') ||
+         (v.lang === 'en-IN' && v.name.includes('Female'))
+      );
+      
+      if (!femaleVoice) femaleVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('Female'));
+      if (femaleVoice) msg.voice = femaleVoice;
+      
+      window.speechSynthesis.speak(msg);
     }
 
     function displayPopup(t) {
-      isDisplayingToken = true; // LOCK ENABLED
-      
       if(player && typeof player.pauseVideo === 'function') player.pauseVideo();
       
       document.getElementById('unmute-button').style.display = 'none'; 
@@ -387,19 +382,23 @@
         popup.classList.remove('popup-emergency');
       }
       
+      // FIX: '#' kum token number kum space add panniyachu
       document.getElementById('popup-token').innerText = String(t.token).startsWith('EM') ? t.token : '# ' + t.token;
       document.getElementById('popup-name').innerText = t.name;
       
       clearTimeout(popupTimeout);
+      if ('speechSynthesis' in window) {
+         window.speechSynthesis.cancel();
+      }
 
-      // Display-a kaatina piragu exact-a voice trigger pandrom
       popup.style.display = 'flex';
-      speakWithFemaleVoice("Token number " + t.token);
+      
+      setTimeout(() => {
+        speakWithFemaleVoice("Token number " + t.token);
+      }, 100);
       
       popupTimeout = setTimeout(() => {
         popup.style.display = 'none';
         if(player && typeof player.playVideo === 'function') player.playVideo();
-        
-        isDisplayingToken = false; // LOCK DISABLED (Only now next token can show)
-      }, 10000); // Exact-a 10 second appuram close aagum
+      }, 10000);
     }
