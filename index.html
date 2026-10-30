@@ -363,24 +363,22 @@
     }
 
 function speakWithProfessionalFemaleVoice(tokenText) {
-      // 1. Browser-oda pazhaya robotic voice-a stop pandrom
       if ('speechSynthesis' in window) {
          window.speechSynthesis.cancel(); 
       }
       
-      // 2. Google Translate-oda Premium AI Voice URL-a generate pandrom
-      // tl=en-IN kuduthurukathala thelivana Indian English Female AI voice kedaikkum
-      const googleAIVoiceUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-IN&q=${encodeURIComponent(tokenText)}`;
+      // tl=en-US nu maathiyachu, ithu kandippa female voice thaan tharum
+      const googleAIVoiceUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=${encodeURIComponent(tokenText)}`;
       
       const audio = new Audio(googleAIVoiceUrl);
       audio.volume = 1.0;
       
-      // 3. AI Voice-a play pandrom
       audio.play().catch(error => {
-         console.warn("AI Voice network issue, using normal fallback...");
-         // Internet issue iruntha mattum pazhaya voice-kku maaridum
+         // Internet issue iruntha strict female fallback
          let msg = new SpeechSynthesisUtterance(tokenText);
-         msg.lang = 'en-IN';
+         let voices = window.speechSynthesis.getVoices();
+         let femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google US English') || v.name.includes('Google UK English Female'));
+         if(femaleVoice) msg.voice = femaleVoice;
          window.speechSynthesis.speak(msg);
       });
     }
