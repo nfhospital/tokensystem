@@ -244,7 +244,7 @@
     
     setInterval(() => { if(window.location.hash.replace('#', '') === 'pharmacy') loadTokens(); }, 6000);
 
-// --- 5. TV LOGIC (STRICT SYNC & AUTO PLAYLIST FIX) ---
+// --- 5. TV LOGIC (PERFECTED VOICE & VIDEO SYNC) ---
     let player;
     let systemInteracted = false;
     let previousReadyTokens = [];
@@ -254,8 +254,9 @@
     // Variables for Sync control
     let popupTimeout;
     let isFetching = false;
-    let isDisplayingToken = false; // MUKKIYAMANA LOCK
+    let isDisplayingToken = false; 
     let currentPlaylist = ""; 
+    let videoArray = []; // Pudhu order fix
 
     function initTV() {
       if(document.getElementById('yt-api-script')) return;
@@ -269,8 +270,11 @@
     async function onYouTubeIframeAPIReady() {
       const videos = await apiCall('getVideoUrls');
       if (Array.isArray(videos) && videos.length > 0) {
+        videoArray = videos;
         currentPlaylist = videos.join(',');
+        
         player = new YT.Player('player', {
+          videoId: videos[0], // PUDHU FIX: First video-va strict-a load pandrom
           playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': currentPlaylist, 'mute': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3 },
           events: { 'onStateChange': (e) => { 
             if ((e.data === YT.PlayerState.UNSTARTED || e.data === YT.PlayerState.PAUSED) && !systemInteracted) {
@@ -282,22 +286,22 @@
         });
       }
       
-      setInterval(checkReadyTokens, 15000); // Check tokens every 15s
-      setInterval(checkVideoUpdates, 30000); // Check new videos every 30s
+      setInterval(checkReadyTokens, 15000); 
+      setInterval(checkVideoUpdates, 30000); 
       
       document.getElementById('unmute-button').onclick = () => {
          systemInteracted = true;
          document.getElementById('unmute-button').style.display = 'none';
          if(player && typeof player.playVideo === 'function') player.playVideo();
          if ('speechSynthesis' in window) {
-            let msg = new SpeechSynthesisUtterance(" "); msg.volume = 0; window.speechSynthesis.speak(msg);
+            let msg = new SpeechSynthesisUtterance("System Ready"); 
+            msg.volume = 0; 
+            window.speechSynthesis.speak(msg);
          }
       };
     }
 
-    // AUTOMATIC VIDEO SYNC (Exact order from Sheet)
     async function checkVideoUpdates() {
-      // Token display aagitu irunthalo, player ready aagalanaalo disturb panna koodathu
       if(!player || typeof player.loadPlaylist !== 'function' || isFetching || isDisplayingToken) return;
       
       try {
@@ -305,13 +309,13 @@
         if (Array.isArray(videos) && videos.length > 0) {
           const newPlaylist = videos.join(',');
           
-          // Sheet-la maattram irunthaal mattum TV-la playlist maaranum
           if (newPlaylist !== currentPlaylist) {
             currentPlaylist = newPlaylist;
+            videoArray = videos;
             
-            // Exact Sheet Order-la puthu playlist-a load pandrom
-            player.loadPlaylist(videos);
-            player.setLoop(true); // Loop aagara feature-a enable pandrom
+            // PUDHU FIX: Exact order-la playlist update panna array anuppurom
+            player.loadPlaylist(videoArray);
+            player.setLoop(true);
             player.playVideo();
           }
         }
@@ -321,7 +325,8 @@
     }
 
     async function checkReadyTokens() {
-      if (isDisplayingToken || isFetching) return; 
+      // Lock ensure pandrom
+      if (isDisplayingToken || isFetching || document.getElementById('popup').style.display === 'flex') return; 
       
       isFetching = true;
       try {
@@ -347,7 +352,7 @@
            loopIndex++;
         }
 
-        displayPopup(tokenToDisplay);
+        if(tokenToDisplay) displayPopup(tokenToDisplay);
       } finally {
         isFetching = false;
       }
@@ -356,26 +361,28 @@
     function speakWithFemaleVoice(tokenText) {
       if (!('speechSynthesis' in window)) return;
       
-      window.speechSynthesis.cancel();
+      window.speechSynthesis.cancel(); // Clear queue
       
+      // PUDHU FIX: Chrome engine crash aagama irukka 250ms strict delay
       setTimeout(() => {
           const msg = new SpeechSynthesisUtterance(tokenText);
           msg.rate = 0.85; 
           msg.pitch = 1.1; 
           
           let voices = window.speechSynthesis.getVoices();
-          let femaleVoice = voices.find(v => 
-             v.name.includes('Google UK English Female') || 
-             v.name.includes('Google US English') ||
-             v.name.includes('Zira') ||
-             (v.lang === 'en-IN' && v.name.includes('Female'))
-          );
-          
-          if (!femaleVoice) femaleVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('Female'));
-          if (femaleVoice) msg.voice = femaleVoice;
+          if(voices.length > 0) {
+              let femaleVoice = voices.find(v => 
+                 v.name.includes('Google UK English Female') || 
+                 v.name.includes('Google US English') ||
+                 v.name.includes('Zira') ||
+                 (v.lang === 'en-IN' && v.name.includes('Female'))
+              );
+              if (!femaleVoice) femaleVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('Female'));
+              if (femaleVoice) msg.voice = femaleVoice;
+          }
           
           window.speechSynthesis.speak(msg);
-      }, 100);
+      }, 250); 
     }
 
     function displayPopup(t) {
@@ -383,9 +390,6 @@
       
       if(player && typeof player.pauseVideo === 'function') player.pauseVideo();
       
-      document.getElementById('unmute-button').style.display = 'none'; 
-      systemInteracted = true; 
-
       const popup = document.getElementById('popup');
       if(String(t.token).startsWith('EM')) {
         popup.classList.add('popup-emergency');
@@ -405,7 +409,8 @@
         popup.style.display = 'none';
         if(player && typeof player.playVideo === 'function') player.playVideo();
         
-        isDisplayingToken = false; 
+        // PUDHU FIX: Adutha token ulla vara munnadi 1 second system relax aaga time kudukkugirom
+        setTimeout(() => { isDisplayingToken = false; }, 1000); 
       }, 10000); 
     }
   </script>
