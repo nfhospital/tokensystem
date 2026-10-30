@@ -362,31 +362,27 @@
       }
     }
 
-    function speakWithProfessionalFemaleVoice(tokenText) {
-      if (!('speechSynthesis' in window)) return;
+function speakWithProfessionalFemaleVoice(tokenText) {
+      // 1. Browser-oda pazhaya robotic voice-a stop pandrom
+      if ('speechSynthesis' in window) {
+         window.speechSynthesis.cancel(); 
+      }
       
-      window.speechSynthesis.cancel(); 
+      // 2. Google Translate-oda Premium AI Voice URL-a generate pandrom
+      // tl=en-IN kuduthurukathala thelivana Indian English Female AI voice kedaikkum
+      const googleAIVoiceUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-IN&q=${encodeURIComponent(tokenText)}`;
       
-      setTimeout(() => {
-          const msg = new SpeechSynthesisUtterance(tokenText);
-          // Human mari natural-a pesa rate & pitch optimize panniyachu
-          msg.rate = 0.85; 
-          msg.pitch = 1.0; 
-          
-          let voices = window.speechSynthesis.getVoices();
-          if(voices.length > 0) {
-              // Microsoft Natural Voice, Google Premium Voice-a thedi assign pandrom
-              let femaleVoice = voices.find(v => v.name.includes('Natural') && v.name.includes('Female')) ||
-                                voices.find(v => v.name.includes('Google UK English Female')) || 
-                                voices.find(v => v.name.includes('Google US English')) ||
-                                voices.find(v => v.name.includes('Zira')) ||
-                                (v.lang === 'en-IN' && v.name.includes('Female'));
-              
-              if (femaleVoice) msg.voice = femaleVoice;
-          }
-          
-          window.speechSynthesis.speak(msg);
-      }, 250); 
+      const audio = new Audio(googleAIVoiceUrl);
+      audio.volume = 1.0;
+      
+      // 3. AI Voice-a play pandrom
+      audio.play().catch(error => {
+         console.warn("AI Voice network issue, using normal fallback...");
+         // Internet issue iruntha mattum pazhaya voice-kku maaridum
+         let msg = new SpeechSynthesisUtterance(tokenText);
+         msg.lang = 'en-IN';
+         window.speechSynthesis.speak(msg);
+      });
     }
 
     function displayPopup(t) {
