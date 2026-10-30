@@ -84,7 +84,7 @@
     <a href="#tv" class="nav-btn" id="nav-tv">TV Display</a>
   </nav>
 
-  <!-- COUNTER (Create Token) -->
+  <!-- COUNTER -->
   <div id="view-counter" class="view-section container">
     <div class="card">
       <h2 style="color: var(--brand); margin-top: 0; display: flex; align-items: center; gap: 10px;">
@@ -111,7 +111,7 @@
     </div>
   </div>
 
-  <!-- PHARMACY (Delivery) -->
+  <!-- PHARMACY -->
   <div id="view-pharmacy" class="view-section container">
     <div class="header-bar">
       <h2 style="margin: 0;">Active Prescriptions</h2>
@@ -141,24 +141,19 @@
     // =================================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbxXuQyAIC5x_YtxFJN8tvv6ppoZaDCXdxDdwJgbVHjPiVlnHs_lFJLea-c4uceVfJjx/exec"; 
 
-    // --- 1. HASH ROUTING (For direct PC Shortcut) ---
+    // --- 1. HASH ROUTING ---
     window.addEventListener('hashchange', handleRoute);
     window.addEventListener('load', handleRoute);
 
     function handleRoute() {
       let hash = window.location.hash.replace('#', '') || 'counter';
-      
-      // Hide all sections
       document.querySelectorAll('.view-section').forEach(el => el.classList.remove('view-active'));
       document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
       
-      // Show Target Section
       const targetView = document.getElementById('view-' + hash);
       if(targetView) {
         targetView.classList.add('view-active');
-        if(document.getElementById('nav-' + hash)) {
-           document.getElementById('nav-' + hash).classList.add('active');
-        }
+        if(document.getElementById('nav-' + hash)) document.getElementById('nav-' + hash).classList.add('active');
       }
 
       if (hash === 'tv') {
@@ -170,7 +165,7 @@
       }
     }
 
-    // --- 2. ROBUST API CALL (Fixes `.forEach` error) ---
+    // --- 2. ROBUST API CALL ---
     async function apiCall(action, params = {}) {
       try {
         const url = new URL(API_URL);
@@ -178,11 +173,9 @@
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
         
         const response = await fetch(url);
-        const data = await response.json();
-        return data;
+        return await response.json();
       } catch (error) {
-        console.error("API Error:", error);
-        return { error: true, message: "Network error or Web App not deployed correctly." };
+        return { error: true, message: "Network error" };
       }
     }
 
@@ -207,12 +200,10 @@
         msgDiv.innerHTML = `<span style="color:var(--brand)">✅ Token #${res.token} created successfully!</span>`;
         document.getElementById(inputId).value = '';
         setTimeout(() => { msgDiv.innerHTML = ''; }, 4000);
-      } else {
-        msgDiv.innerHTML = `<span style="color:var(--danger)">❌ Error generating token.</span>`;
       }
     }
 
-    // --- 4. PHARMACY LOGIC (Error handled safely) ---
+    // --- 4. PHARMACY LOGIC ---
     async function loadTokens() {
       document.getElementById('loader').style.display = 'block';
       const tokens = await apiCall('getActiveTokens');
@@ -221,13 +212,10 @@
       const grid = document.getElementById('tokenGrid');
       grid.innerHTML = '';
       
-      // Fix for `tokens.forEach is not a function` error
       if (tokens.error || !Array.isArray(tokens)) {
-         grid.innerHTML = `<p style="color:red; width:100%; text-align:center;">API Error: Please check Apps Script deployment.</p>`;
-         console.error(tokens);
+         grid.innerHTML = `<p style="color:red; width:100%; text-align:center;">API Error: Please check deployment.</p>`;
          return;
       }
-      
       if (tokens.length === 0) {
          grid.innerHTML = `<p style="color:#64748b; width:100%; text-align:center; padding: 30px;">No active prescriptions waiting.</p>`;
          return;
@@ -254,15 +242,19 @@
       loadTokens();
     }
     
-    // Auto-refresh pharmacy every 6 seconds (if on pharmacy tab)
-    setInterval(() => { 
-      if(window.location.hash.replace('#', '') === 'pharmacy') loadTokens(); 
-    }, 6000);
+    setInterval(() => { if(window.location.hash.replace('#', '') === 'pharmacy') loadTokens(); }, 6000);
 
-    // --- 5. TV LOGIC ---
+    // --- 5. TV LOGIC (Fixes: Ads, Overlay, Voice, Order) ---
     let player;
+    let systemInteracted = false;
+    
+    // Arrays for tracking smart queue
+    let previousReadyTokens = [];
+    let priorityQueue = [];
+    let loopIndex = 0;
+
     function initTV() {
-      if(document.getElementById('yt-api-script')) return; // prevent duplicate loading
+      if(document.getElementById('yt-api-script')) return;
       var tag = document.createElement('script');
       tag.id = 'yt-api-script';
       tag.src = "https://www.youtube.com/iframe_api";
@@ -274,9 +266,10 @@
       const videos = await apiCall('getVideoUrls');
       if (Array.isArray(videos) && videos.length > 0) {
         player = new YT.Player('player', {
-          playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': videos.join(','), 'mute': 0 },
+          // rel: 0, modestbranding: 1, iv_load_policy: 3 (Used to reduce Ads and YouTube branding)
+          playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': videos.join(','), 'mute': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3 },
           events: { 'onStateChange': (e) => { 
-            if (e.data === YT.PlayerState.UNSTARTED || e.data === YT.PlayerState.PAUSED) {
+            if ((e.data === YT.PlayerState.UNSTARTED || e.data === YT.PlayerState.PAUSED) && !systemInteracted) {
                 document.getElementById('unmute-button').style.display = 'block';
             } else {
                 document.getElementById('unmute-button').style.display = 'none';
@@ -287,29 +280,82 @@
       setInterval(checkReadyTokens, 15000);
       
       document.getElementById('unmute-button').onclick = () => {
+         systemInteracted = true;
+         document.getElementById('unmute-button').style.display = 'none'; // Overlap fix
          if(player && typeof player.playVideo === 'function') player.playVideo();
-         document.getElementById('unmute-button').style.display = 'none';
          if ('speechSynthesis' in window) {
-            let msg = new SpeechSynthesisUtterance(" "); msg.volume = 0; window.speechSynthesis.speak(msg);
+            let msg = new SpeechSynthesisUtterance("System active"); msg.volume = 0; window.speechSynthesis.speak(msg);
          }
       };
     }
 
-    let currentCycleIndex = 0;
     async function checkReadyTokens() {
-      if (document.getElementById('popup').style.display === 'flex') return;
-      const readyTokens = await apiCall('getReadyTokens');
+      if (document.getElementById('popup').style.display === 'flex') return; // wait if currently displaying
       
-      if(!Array.isArray(readyTokens) || readyTokens.length === 0) { currentCycleIndex = 0; return; }
+      const currentReadyTokens = await apiCall('getReadyTokens');
+      if(!Array.isArray(currentReadyTokens) || currentReadyTokens.length === 0) {
+        previousReadyTokens = [];
+        priorityQueue = [];
+        return;
+      }
+
+      // 1. Identify New Tokens (Freshly marked as Ready)
+      const newTokens = currentReadyTokens.filter(curr => !previousReadyTokens.some(prev => prev.token === curr.token));
+      previousReadyTokens = currentReadyTokens; // update cache
       
-      if(currentCycleIndex >= readyTokens.length) currentCycleIndex = 0;
-      displayPopup(readyTokens[currentCycleIndex]);
-      currentCycleIndex++;
+      // 2. Add New Tokens to the FRONT of Priority Queue
+      newTokens.forEach(t => priorityQueue.unshift(t));
+
+      let tokenToDisplay;
+
+      // 3. Smart Selection: If we have new tokens, announce them first!
+      if (priorityQueue.length > 0) {
+         tokenToDisplay = priorityQueue.shift(); // take the first priority token
+      } 
+      // 4. Otherwise, loop through all pending ready tokens
+      else {
+         if (loopIndex >= currentReadyTokens.length) loopIndex = 0;
+         tokenToDisplay = currentReadyTokens[loopIndex];
+         loopIndex++;
+      }
+
+      displayPopup(tokenToDisplay);
+    }
+
+    // Clear Female Voice function
+    function speakWithFemaleVoice(tokenText) {
+      if (!('speechSynthesis' in window)) return;
+      
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        const msg = new SpeechSynthesisUtterance(tokenText);
+        msg.rate = 0.85; // Slightly slower for clarity
+        msg.pitch = 1.1; // Female pitch adjustment
+        
+        let voices = window.speechSynthesis.getVoices();
+        
+        // Find best quality female voice (Google / Microsoft Zira / Indian Female)
+        let femaleVoice = voices.find(v => 
+           v.name.includes('Google UK English Female') || 
+           v.name.includes('Google US English') ||
+           v.name.includes('Zira') ||
+           (v.lang === 'en-IN' && v.name.includes('Female'))
+        );
+        
+        if (!femaleVoice) femaleVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('Female'));
+        if (femaleVoice) msg.voice = femaleVoice;
+        
+        window.speechSynthesis.speak(msg);
+      }, 300);
     }
 
     function displayPopup(t) {
       if(player && typeof player.pauseVideo === 'function') player.pauseVideo();
       
+      // Force Hide "Tap to start" if it somehow shows up [Fix for image overlap]
+      document.getElementById('unmute-button').style.display = 'none'; 
+      systemInteracted = true; 
+
       const popup = document.getElementById('popup');
       if(String(t.token).startsWith('EM')) {
         popup.classList.add('popup-emergency');
@@ -321,15 +367,8 @@
       document.getElementById('popup-name').innerText = t.name;
       popup.style.display = 'flex';
       
-      if ('speechSynthesis' in window) {
-         window.speechSynthesis.cancel();
-         setTimeout(() => {
-           const msg = new SpeechSynthesisUtterance("Token number " + t.token);
-           msg.lang = 'en-IN';
-           msg.rate = 0.9;
-           window.speechSynthesis.speak(msg);
-         }, 500);
-      }
+      // Speak the Token
+      speakWithFemaleVoice("Token number " + t.token);
       
       setTimeout(() => {
         popup.style.display = 'none';
