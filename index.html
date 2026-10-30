@@ -227,7 +227,7 @@
         
         grid.innerHTML += `
           <div class="token-card ${isEm ? 'emergency' : ''}">
-            <h2 style="color: ${isEm ? 'var(--danger)' : 'var(--brand)'}">${isEm ? t.token : '#'+t.token}</h2>
+            <h2 style="color: ${isEm ? 'var(--danger)' : 'var(--brand)'}">${isEm ? t.token : '# '+t.token}</h2>
             <p>${t.name}</p>
             <div class="actions">
               <button class="btn-ready" style="background: ${isReady ? '#0ea5e9' : 'var(--brand)'}" onclick="updateStatus('${t.token}', 'Ready')">${isReady ? 'Re-Announce' : 'Mark Ready'}</button>
@@ -359,7 +359,7 @@
         popup.classList.remove('popup-emergency');
       }
       
-      document.getElementById('popup-token').innerText = String(t.token).startsWith('EM') ? t.token : '#' + t.token;
+      document.getElementById('popup-token').innerText = String(t.token).startsWith('EM') ? t.token : '# ' + t.token;
       document.getElementById('popup-name').innerText = t.name;
       
       // 2. CLEAR ALL PREVIOUS TIMERS & VOICES (This strictly ties voice and display together)
