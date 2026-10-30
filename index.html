@@ -137,7 +137,7 @@
 
   <script>
     // =================================================================
-    // ⚠️ REPLACE THIS WITH YOUR NEW DEPLOYMENT URL
+    // ⚠️ REPLACE THIS WITH YOUR APPS SCRIPT URL
     // =================================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbxXuQyAIC5x_YtxFJN8tvv6ppoZaDCXdxDdwJgbVHjPiVlnHs_lFJLea-c4uceVfJjx/exec"; 
 
@@ -244,14 +244,16 @@
     
     setInterval(() => { if(window.location.hash.replace('#', '') === 'pharmacy') loadTokens(); }, 6000);
 
-    // --- 5. TV LOGIC (Fixes: Ads, Overlay, Voice, Order) ---
+    // --- 5. TV LOGIC (PERFECT SYNC FIXES APPLIED) ---
     let player;
     let systemInteracted = false;
-    
-    // Arrays for tracking smart queue
     let previousReadyTokens = [];
     let priorityQueue = [];
     let loopIndex = 0;
+    
+    // New variables for Sync control
+    let popupTimeout;
+    let isFetching = false;
 
     function initTV() {
       if(document.getElementById('yt-api-script')) return;
@@ -266,7 +268,6 @@
       const videos = await apiCall('getVideoUrls');
       if (Array.isArray(videos) && videos.length > 0) {
         player = new YT.Player('player', {
-          // rel: 0, modestbranding: 1, iv_load_policy: 3 (Used to reduce Ads and YouTube branding)
           playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': videos.join(','), 'mute': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3 },
           events: { 'onStateChange': (e) => { 
             if ((e.data === YT.PlayerState.UNSTARTED || e.data === YT.PlayerState.PAUSED) && !systemInteracted) {
@@ -281,7 +282,7 @@
       
       document.getElementById('unmute-button').onclick = () => {
          systemInteracted = true;
-         document.getElementById('unmute-button').style.display = 'none'; // Overlap fix
+         document.getElementById('unmute-button').style.display = 'none';
          if(player && typeof player.playVideo === 'function') player.playVideo();
          if ('speechSynthesis' in window) {
             let msg = new SpeechSynthesisUtterance("System active"); msg.volume = 0; window.speechSynthesis.speak(msg);
@@ -290,69 +291,64 @@
     }
 
     async function checkReadyTokens() {
-      if (document.getElementById('popup').style.display === 'flex') return; // wait if currently displaying
+      // OVERLAP LOCK: Screen-la popup irunthalo, allathu already fetch aagitu irunthalo thirumba fetch panna koodathu
+      if (document.getElementById('popup').style.display === 'flex' || isFetching) return; 
       
-      const currentReadyTokens = await apiCall('getReadyTokens');
-      if(!Array.isArray(currentReadyTokens) || currentReadyTokens.length === 0) {
-        previousReadyTokens = [];
-        priorityQueue = [];
-        return;
+      isFetching = true;
+      try {
+        const currentReadyTokens = await apiCall('getReadyTokens');
+        
+        if(!Array.isArray(currentReadyTokens) || currentReadyTokens.length === 0) {
+          previousReadyTokens = [];
+          priorityQueue = [];
+          return;
+        }
+
+        const newTokens = currentReadyTokens.filter(curr => !previousReadyTokens.some(prev => prev.token === curr.token));
+        previousReadyTokens = currentReadyTokens;
+        
+        newTokens.forEach(t => priorityQueue.unshift(t));
+
+        let tokenToDisplay;
+        if (priorityQueue.length > 0) {
+           tokenToDisplay = priorityQueue.shift();
+        } else {
+           if (loopIndex >= currentReadyTokens.length) loopIndex = 0;
+           tokenToDisplay = currentReadyTokens[loopIndex];
+           loopIndex++;
+        }
+
+        displayPopup(tokenToDisplay);
+      } finally {
+        isFetching = false;
       }
-
-      // 1. Identify New Tokens (Freshly marked as Ready)
-      const newTokens = currentReadyTokens.filter(curr => !previousReadyTokens.some(prev => prev.token === curr.token));
-      previousReadyTokens = currentReadyTokens; // update cache
-      
-      // 2. Add New Tokens to the FRONT of Priority Queue
-      newTokens.forEach(t => priorityQueue.unshift(t));
-
-      let tokenToDisplay;
-
-      // 3. Smart Selection: If we have new tokens, announce them first!
-      if (priorityQueue.length > 0) {
-         tokenToDisplay = priorityQueue.shift(); // take the first priority token
-      } 
-      // 4. Otherwise, loop through all pending ready tokens
-      else {
-         if (loopIndex >= currentReadyTokens.length) loopIndex = 0;
-         tokenToDisplay = currentReadyTokens[loopIndex];
-         loopIndex++;
-      }
-
-      displayPopup(tokenToDisplay);
     }
 
-    // Clear Female Voice function
     function speakWithFemaleVoice(tokenText) {
       if (!('speechSynthesis' in window)) return;
       
-      window.speechSynthesis.cancel();
-      setTimeout(() => {
-        const msg = new SpeechSynthesisUtterance(tokenText);
-        msg.rate = 0.85; // Slightly slower for clarity
-        msg.pitch = 1.1; // Female pitch adjustment
-        
-        let voices = window.speechSynthesis.getVoices();
-        
-        // Find best quality female voice (Google / Microsoft Zira / Indian Female)
-        let femaleVoice = voices.find(v => 
-           v.name.includes('Google UK English Female') || 
-           v.name.includes('Google US English') ||
-           v.name.includes('Zira') ||
-           (v.lang === 'en-IN' && v.name.includes('Female'))
-        );
-        
-        if (!femaleVoice) femaleVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('Female'));
-        if (femaleVoice) msg.voice = femaleVoice;
-        
-        window.speechSynthesis.speak(msg);
-      }, 300);
+      const msg = new SpeechSynthesisUtterance(tokenText);
+      msg.rate = 0.85; 
+      msg.pitch = 1.1; 
+      
+      let voices = window.speechSynthesis.getVoices();
+      let femaleVoice = voices.find(v => 
+         v.name.includes('Google UK English Female') || 
+         v.name.includes('Google US English') ||
+         v.name.includes('Zira') ||
+         (v.lang === 'en-IN' && v.name.includes('Female'))
+      );
+      
+      if (!femaleVoice) femaleVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('Female'));
+      if (femaleVoice) msg.voice = femaleVoice;
+      
+      window.speechSynthesis.speak(msg);
     }
 
     function displayPopup(t) {
+      // 1. Pause Video completely
       if(player && typeof player.pauseVideo === 'function') player.pauseVideo();
       
-      // Force Hide "Tap to start" if it somehow shows up [Fix for image overlap]
       document.getElementById('unmute-button').style.display = 'none'; 
       systemInteracted = true; 
 
@@ -365,12 +361,23 @@
       
       document.getElementById('popup-token').innerText = String(t.token).startsWith('EM') ? t.token : '#' + t.token;
       document.getElementById('popup-name').innerText = t.name;
+      
+      // 2. CLEAR ALL PREVIOUS TIMERS & VOICES (This strictly ties voice and display together)
+      clearTimeout(popupTimeout);
+      if ('speechSynthesis' in window) {
+         window.speechSynthesis.cancel();
+      }
+
+      // 3. SHOW DISPLAY FIRST
       popup.style.display = 'flex';
       
-      // Speak the Token
-      speakWithFemaleVoice("Token number " + t.token);
-      
+      // 4. TRIGGER VOICE EXACTLY WHEN DISPLAY APPEARS
       setTimeout(() => {
+        speakWithFemaleVoice("Token number " + t.token);
+      }, 100);
+      
+      // 5. REMOVE DISPLAY EXACTLY AFTER 10 SECONDS
+      popupTimeout = setTimeout(() => {
         popup.style.display = 'none';
         if(player && typeof player.playVideo === 'function') player.playVideo();
       }, 10000);
