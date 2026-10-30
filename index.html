@@ -3,168 +3,247 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Pharmacy Hub</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <title>Smart Pharmacy - Neuro Foundation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
   <style>
     :root { 
-      var(--primary): #078c80; /* Unga Hospital Brand Color */
-      --success: #16a34a; --dark: #1e293b; --danger: #dc2626; 
-      --bg: #f1f5f9; --card-bg: #ffffff; --text: #334155;
+      --brand: #078c80; /* Neuro Foundation Color */
+      --brand-hover: #067268;
+      --danger: #ef4444; 
+      --danger-hover: #dc2626;
+      --bg: #f8fafc; 
+      --text: #1e293b;
+      --card-bg: #ffffff;
     }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; min-height: 100vh; }
-    .container { max-width: 800px; margin: 0 auto; width: 100%; }
-    .card { background: var(--card-bg); padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-top: 5vh; }
-    h1 { color: var(--dark); text-align: center; margin-top: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; }
     
-    .btn-link { display: block; padding: 18px; border-radius: 12px; border: none; font-weight: 600; text-align: center; text-decoration: none; margin-bottom: 15px; color: white; cursor: pointer; }
-    .bg-brand { background-color: #078c80; }
-    .bg-green { background-color: var(--success); }
-    .bg-dark { background-color: var(--dark); }
-    .bg-red { background-color: var(--danger); }
+    /* Professional Navbar */
+    .navbar { background: var(--brand); padding: 15px 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; justify-content: center; gap: 10px; position: sticky; top: 0; z-index: 100; }
+    .nav-btn { background: rgba(255,255,255,0.15); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; text-decoration: none; font-size: 1rem; }
+    .nav-btn:hover, .nav-btn.active { background: white; color: var(--brand); }
     
-    .view-section { display: none; width: 100%; }
+    .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+    .card { background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    
+    /* Inputs & Buttons */
+    .input-group { margin-bottom: 25px; }
+    .input-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #475569; }
+    input[type="text"] { width: 100%; padding: 15px; border: 2px solid #cbd5e1; border-radius: 10px; font-size: 1.1rem; box-sizing: border-box; transition: 0.3s; background: #f8fafc; }
+    input[type="text"]:focus { border-color: var(--brand); outline: none; background: white; box-shadow: 0 0 0 3px rgba(7,140,128,0.1); }
+    
+    .em-input { border-color: #fca5a5 !important; background: #fef2f2 !important; }
+    .em-input:focus { border-color: var(--danger) !important; box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important; }
+
+    button.btn { width: 100%; padding: 16px; color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
+    .btn-brand { background: var(--brand); }
+    .btn-brand:hover { background: var(--brand-hover); }
+    .btn-danger { background: var(--danger); }
+    .btn-danger:hover { background: var(--danger-hover); }
+    
+    /* Delivery Grid */
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .token-card { background: #fff; border-radius: 14px; padding: 25px 20px; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.04); position: relative; overflow: hidden; }
+    .token-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: var(--brand); }
+    .token-card.emergency::before { background: var(--danger); }
+    .token-card.emergency { background: #fef2f2; border-color: #fecaca; }
+    .token-card h2 { font-size: 3.5rem; margin: 0; color: var(--text); line-height: 1.2; }
+    .token-card p { font-size: 1.2rem; color: #64748b; margin: 10px 0 20px; font-weight: 500; }
+    
+    .actions { display: flex; gap: 10px; }
+    .actions button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; color: white; }
+    .btn-ready { background: var(--brand); }
+    .btn-clear { background: #94a3b8; }
+    .btn-clear:hover { background: #64748b; }
+    
+    .view-section { display: none; animation: fadeIn 0.3s ease; }
     .view-active { display: block; }
-    
-    input[type="text"] { width: 100%; padding: 16px; margin-bottom: 20px; border: 2px solid #cbd5e1; border-radius: 10px; font-size: 1.1rem; box-sizing: border-box; }
-    input[type="text"]:focus { border-color: #078c80; outline: none; }
-    
-    button.action-btn { width: 100%; padding: 16px; background: #078c80; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 1.1rem; }
-    .result { margin-top: 20px; padding: 18px; border-radius: 10px; text-align: center; font-weight: 600; }
-    
-    /* Delivery Grid CSS */
-    .header-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; }
-    .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-    .token-card { background: #fff; border-radius: 12px; padding: 20px; text-align: center; }
-    .token-card h2 { font-size: 3.5rem; margin: 0; }
-    .token-card.emergency { background: #fef2f2; border: 2px solid #fecaca; }
-    .token-card.emergency h2 { color: var(--danger); }
-    .actions button { flex: 1; padding: 12px; border-radius: 8px; border: none; color: white; cursor: pointer; width: 48%; margin: 1%; font-weight: bold; }
-    
-    /* TV CSS */
-    body.tv-mode { margin: 0; padding: 0; background: #000; overflow: hidden; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Loader */
+    .loader { display: none; text-align: center; padding: 20px; color: #64748b; font-weight: 600; }
+    .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(7,140,128,0.2); border-top-color: var(--brand); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* TV Display CSS */
+    body.tv-mode .navbar { display: none; }
+    body.tv-mode { background: #000; overflow: hidden; }
     #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-    #popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 140, 128, 0.96); /* Normal Hospital Color Popup */ color: white; display: none; justify-content: center; align-items: center; flex-direction: column; text-align: center; z-index: 1000; }
-    #popup.popup-emergency { background: rgba(220, 38, 38, 0.96); /* Red Popup for EM */ }
-    #popup .token-number { font-size: 25vw; font-weight: 800; line-height: 1; }
-    #unmute-button { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; padding: 20px 40px; font-size: 2rem; border-radius: 50px; background: white; color: black; border: none; cursor: pointer; }
+    #popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 140, 128, 0.95); color: white; display: none; justify-content: center; align-items: center; flex-direction: column; text-align: center; z-index: 1000; backdrop-filter: blur(10px); }
+    #popup.popup-emergency { background: rgba(220, 38, 38, 0.95); }
+    #popup .token-number { font-size: 25vw; font-weight: 800; line-height: 1; text-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    #unmute-button { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; padding: 20px 40px; font-size: 2rem; border-radius: 50px; background: white; color: black; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
   </style>
 </head>
 <body>
 
-  <!-- PAGE ROUTING TABS -->
-  <div style="text-align: center; margin-bottom: 15px; display: flex; gap: 10px; justify-content: center;" id="nav-menu">
-    <button onclick="switchView('home')" class="action-btn bg-dark" style="width: auto; padding: 10px 20px;">Home</button>
-    <button onclick="switchView('create')" class="action-btn bg-brand" style="width: auto; padding: 10px 20px;">Counter</button>
-    <button onclick="switchView('delivery')" class="action-btn bg-green" style="width: auto; padding: 10px 20px;">Pharmacy</button>
-    <button onclick="switchView('display')" class="action-btn bg-dark" style="width: auto; padding: 10px 20px;">TV</button>
-  </div>
+  <!-- Navigation -->
+  <nav class="navbar" id="nav-menu">
+    <a href="#counter" class="nav-btn" id="nav-counter">Counter</a>
+    <a href="#pharmacy" class="nav-btn" id="nav-pharmacy">Pharmacy</a>
+    <a href="#tv" class="nav-btn" id="nav-tv">TV Display</a>
+  </nav>
 
-  <!-- HOME PAGE -->
-  <div id="view-home" class="view-section view-active container">
+  <!-- COUNTER (Create Token) -->
+  <div id="view-counter" class="view-section container">
     <div class="card">
-      <h1>Pharmacy Hub</h1>
-      <p style="text-align: center;">Select an option above to navigate.</p>
+      <h2 style="color: var(--brand); margin-top: 0; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.5rem;">🟢</span> Normal Token
+      </h2>
+      <div class="input-group">
+        <label>Patient Name</label>
+        <input type="text" id="patientName" placeholder="Enter patient name..." autocomplete="off">
+      </div>
+      <button onclick="submitToken(false)" class="btn btn-brand" id="btn-normal">Generate Normal Token</button>
+      
+      <hr style="margin: 40px 0; border: none; border-top: 2px dashed #e2e8f0;">
+      
+      <h2 style="color: var(--danger); margin-top: 0; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.5rem;">🔴</span> Emergency Token
+      </h2>
+      <div class="input-group">
+        <label style="color: var(--danger);">Emergency Patient Name</label>
+        <input type="text" id="emPatientName" class="em-input" placeholder="Enter emergency name..." autocomplete="off">
+      </div>
+      <button onclick="submitToken(true)" class="btn btn-danger" id="btn-em">Generate EMERGENCY Token</button>
+      
+      <div id="result-msg" style="margin-top: 20px; text-align: center; font-weight: bold; font-size: 1.2rem;"></div>
     </div>
   </div>
 
-  <!-- CREATE PAGE -->
-  <div id="view-create" class="view-section container">
-    <div class="card">
-      <h1 style="color: #078c80;">New Token</h1>
-      <input type="text" id="patientName" placeholder="Enter Normal Patient Name">
-      <button onclick="submitToken(false)" class="action-btn bg-brand">Generate Normal Token</button>
-      
-      <hr style="margin: 30px 0;">
-      <h1 style="color: var(--danger);">Emergency Token</h1>
-      <input type="text" id="emPatientName" placeholder="Enter Emergency Name" style="background:#fef2f2; border-color:#fecaca;">
-      <button onclick="submitToken(true)" class="action-btn bg-red">Generate EMERGENCY Token</button>
-      
-      <div id="result" class="result" style="display:none;"></div>
-    </div>
-  </div>
-
-  <!-- DELIVERY PAGE -->
-  <div id="view-delivery" class="view-section container">
+  <!-- PHARMACY (Delivery) -->
+  <div id="view-pharmacy" class="view-section container">
     <div class="header-bar">
-      <h1>Active Prescriptions</h1>
-      <button onclick="loadTokens()" style="padding: 10px; font-weight: bold; cursor: pointer;">🔄 Refresh</button>
+      <h2 style="margin: 0;">Active Prescriptions</h2>
+      <button onclick="loadTokens()" style="padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">🔄 Refresh</button>
+    </div>
+    
+    <div id="loader" class="loader">
+      <div class="spinner"></div><br>Syncing...
     </div>
     <div id="tokenGrid" class="token-grid"></div>
   </div>
 
-  <!-- TV PAGE -->
-  <div id="view-display" class="view-section">
+  <!-- TV DISPLAY -->
+  <div id="view-tv" class="view-section">
     <div id="player"></div>
     <div id="popup">
-      <div style="font-size: 5vw; font-weight: 600; color: #ccfbf1;">Please Collect Medicine</div>
+      <div style="font-size: 4vw; font-weight: 600; color: rgba(255,255,255,0.9); margin-bottom: 20px;">PLEASE COLLECT MEDICINE</div>
       <div id="popup-token" class="token-number"></div>
-      <div id="popup-name" style="font-size: 6vw; margin-top: 20px;"></div>
+      <div id="popup-name" style="font-size: 5vw; margin-top: 20px; font-weight: 600;"></div>
     </div>
     <button id="unmute-button">Tap to Start System</button>
   </div>
 
   <script>
-    // ==========================================
-    // PUT YOUR DEPLOYED GOOGLE SCRIPT URL HERE!
-    // ==========================================
+    // =================================================================
+    // ⚠️ REPLACE THIS WITH YOUR NEW DEPLOYMENT URL
+    // =================================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbxXuQyAIC5x_YtxFJN8tvv6ppoZaDCXdxDdwJgbVHjPiVlnHs_lFJLea-c4uceVfJjx/exec"; 
 
-    function switchView(view) {
-      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('view-active'));
-      document.getElementById('view-' + view).classList.add('view-active');
-      document.getElementById('nav-menu').style.display = (view === 'display') ? 'none' : 'flex';
+    // --- 1. HASH ROUTING (For direct PC Shortcut) ---
+    window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('load', handleRoute);
+
+    function handleRoute() {
+      let hash = window.location.hash.replace('#', '') || 'counter';
       
-      if (view === 'display') {
+      // Hide all sections
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('view-active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      
+      // Show Target Section
+      const targetView = document.getElementById('view-' + hash);
+      if(targetView) {
+        targetView.classList.add('view-active');
+        if(document.getElementById('nav-' + hash)) {
+           document.getElementById('nav-' + hash).classList.add('active');
+        }
+      }
+
+      if (hash === 'tv') {
         document.body.classList.add('tv-mode');
         initTV();
       } else {
         document.body.classList.remove('tv-mode');
-        if(view === 'delivery') loadTokens();
+        if (hash === 'pharmacy') loadTokens();
       }
     }
 
+    // --- 2. ROBUST API CALL (Fixes `.forEach` error) ---
     async function apiCall(action, params = {}) {
-      const url = new URL(API_URL);
-      url.searchParams.append('action', action);
-      Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-      
-      const response = await fetch(url);
-      return response.json();
+      try {
+        const url = new URL(API_URL);
+        url.searchParams.append('action', action);
+        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("API Error:", error);
+        return { error: true, message: "Network error or Web App not deployed correctly." };
+      }
     }
 
-    // --- CREATE LOGIC ---
+    // --- 3. COUNTER LOGIC ---
     async function submitToken(isEmergency) {
       const inputId = isEmergency ? 'emPatientName' : 'patientName';
-      const name = document.getElementById(inputId).value;
-      if(!name) return alert("Enter name");
+      const btnId = isEmergency ? 'btn-em' : 'btn-normal';
+      const name = document.getElementById(inputId).value.trim();
       
+      if(!name) return alert("Please enter patient name");
+      
+      document.getElementById(btnId).innerText = "Generating...";
+      document.getElementById(btnId).disabled = true;
+
       const res = await apiCall('createToken', { name: name, isEmergency: isEmergency });
-      const resultDiv = document.getElementById('result');
-      resultDiv.style.display = 'block';
-      if(res.success) {
-        resultDiv.innerHTML = `✅ Token <strong>#${res.token}</strong> generated!`;
-        resultDiv.style.backgroundColor = "#dcfce7";
+      
+      document.getElementById(btnId).innerText = isEmergency ? "Generate EMERGENCY Token" : "Generate Normal Token";
+      document.getElementById(btnId).disabled = false;
+      
+      const msgDiv = document.getElementById('result-msg');
+      if(res && res.success) {
+        msgDiv.innerHTML = `<span style="color:var(--brand)">✅ Token #${res.token} created successfully!</span>`;
         document.getElementById(inputId).value = '';
+        setTimeout(() => { msgDiv.innerHTML = ''; }, 4000);
+      } else {
+        msgDiv.innerHTML = `<span style="color:var(--danger)">❌ Error generating token.</span>`;
       }
     }
 
-    // --- DELIVERY LOGIC ---
+    // --- 4. PHARMACY LOGIC (Error handled safely) ---
     async function loadTokens() {
+      document.getElementById('loader').style.display = 'block';
       const tokens = await apiCall('getActiveTokens');
+      document.getElementById('loader').style.display = 'none';
+      
       const grid = document.getElementById('tokenGrid');
       grid.innerHTML = '';
       
+      // Fix for `tokens.forEach is not a function` error
+      if (tokens.error || !Array.isArray(tokens)) {
+         grid.innerHTML = `<p style="color:red; width:100%; text-align:center;">API Error: Please check Apps Script deployment.</p>`;
+         console.error(tokens);
+         return;
+      }
+      
+      if (tokens.length === 0) {
+         grid.innerHTML = `<p style="color:#64748b; width:100%; text-align:center; padding: 30px;">No active prescriptions waiting.</p>`;
+         return;
+      }
+
       tokens.forEach(t => {
         const isReady = t.status === 'Ready';
         const isEm = String(t.token).startsWith('EM');
         
         grid.innerHTML += `
           <div class="token-card ${isEm ? 'emergency' : ''}">
-            <h2>${isEm ? t.token : '#'+t.token}</h2>
+            <h2 style="color: ${isEm ? 'var(--danger)' : 'var(--brand)'}">${isEm ? t.token : '#'+t.token}</h2>
             <p>${t.name}</p>
             <div class="actions">
-              <button class="bg-green" onclick="updateStatus('${t.token}', 'Ready')">${isReady ? 'Re-Announce' : 'Ready'}</button>
-              <button class="bg-dark" onclick="updateStatus('${t.token}', 'Delivered')">Clear</button>
+              <button class="btn-ready" style="background: ${isReady ? '#0ea5e9' : 'var(--brand)'}" onclick="updateStatus('${t.token}', 'Ready')">${isReady ? 'Re-Announce' : 'Mark Ready'}</button>
+              <button class="btn-clear" onclick="updateStatus('${t.token}', 'Delivered')">Clear</button>
             </div>
           </div>`;
       });
@@ -174,12 +253,18 @@
       await apiCall('updateToken', { token, status });
       loadTokens();
     }
-    setInterval(() => { if(document.body.classList.contains('tv-mode') === false) loadTokens(); }, 6000);
+    
+    // Auto-refresh pharmacy every 6 seconds (if on pharmacy tab)
+    setInterval(() => { 
+      if(window.location.hash.replace('#', '') === 'pharmacy') loadTokens(); 
+    }, 6000);
 
-    // --- TV LOGIC (Fix applied for Chrome Autoplay & EM Red) ---
+    // --- 5. TV LOGIC ---
     let player;
     function initTV() {
+      if(document.getElementById('yt-api-script')) return; // prevent duplicate loading
       var tag = document.createElement('script');
+      tag.id = 'yt-api-script';
       tag.src = "https://www.youtube.com/iframe_api";
       var firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -187,12 +272,11 @@
 
     async function onYouTubeIframeAPIReady() {
       const videos = await apiCall('getVideoUrls');
-      if(videos.length > 0) {
+      if (Array.isArray(videos) && videos.length > 0) {
         player = new YT.Player('player', {
           playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': videos.join(','), 'mute': 0 },
           events: { 'onStateChange': (e) => { 
             if (e.data === YT.PlayerState.UNSTARTED || e.data === YT.PlayerState.PAUSED) {
-                // If browser blocks autoplay, button shows up. Otherwise it plays directly.
                 document.getElementById('unmute-button').style.display = 'block';
             } else {
                 document.getElementById('unmute-button').style.display = 'none';
@@ -203,7 +287,7 @@
       setInterval(checkReadyTokens, 15000);
       
       document.getElementById('unmute-button').onclick = () => {
-         player.playVideo();
+         if(player && typeof player.playVideo === 'function') player.playVideo();
          document.getElementById('unmute-button').style.display = 'none';
          if ('speechSynthesis' in window) {
             let msg = new SpeechSynthesisUtterance(" "); msg.volume = 0; window.speechSynthesis.speak(msg);
@@ -215,7 +299,8 @@
     async function checkReadyTokens() {
       if (document.getElementById('popup').style.display === 'flex') return;
       const readyTokens = await apiCall('getReadyTokens');
-      if(readyTokens.length === 0) { currentCycleIndex = 0; return; }
+      
+      if(!Array.isArray(readyTokens) || readyTokens.length === 0) { currentCycleIndex = 0; return; }
       
       if(currentCycleIndex >= readyTokens.length) currentCycleIndex = 0;
       displayPopup(readyTokens[currentCycleIndex]);
@@ -223,17 +308,16 @@
     }
 
     function displayPopup(t) {
-      if(player) player.pauseVideo();
+      if(player && typeof player.pauseVideo === 'function') player.pauseVideo();
       
       const popup = document.getElementById('popup');
-      // Emergency Background Check
       if(String(t.token).startsWith('EM')) {
         popup.classList.add('popup-emergency');
       } else {
         popup.classList.remove('popup-emergency');
       }
       
-      document.getElementById('popup-token').innerText = t.token;
+      document.getElementById('popup-token').innerText = String(t.token).startsWith('EM') ? t.token : '#' + t.token;
       document.getElementById('popup-name').innerText = t.name;
       popup.style.display = 'flex';
       
@@ -242,13 +326,14 @@
          setTimeout(() => {
            const msg = new SpeechSynthesisUtterance("Token number " + t.token);
            msg.lang = 'en-IN';
+           msg.rate = 0.9;
            window.speechSynthesis.speak(msg);
          }, 500);
       }
       
       setTimeout(() => {
         popup.style.display = 'none';
-        if(player) player.playVideo();
+        if(player && typeof player.playVideo === 'function') player.playVideo();
       }, 10000);
     }
   </script>
