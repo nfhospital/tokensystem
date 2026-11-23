@@ -395,6 +395,41 @@
         setTimeout(() => { isDisplayingToken = false; }, 1000); // 1s Lock Relax
       }, 10000); 
     }
+    // --- 6. MOBILE SCREEN WAKE LOCK (Screen Off / Lock Aagama Irukka) ---
+    let wakeLock = null;
+
+    async function keepScreenAwake() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+          console.log('Screen Wake Lock Active');
+
+          wakeLock.addEventListener('release', () => {
+            wakeLock = null;
+          });
+        } catch (err) {
+          console.log('Wake Lock Error:', err.message);
+        }
+      }
+    }
+
+    // 1. App open aagumbothum, screen-a touch pannumbothum auto-lock off aagum
+    window.addEventListener('load', keepScreenAwake);
+    document.addEventListener('click', () => { if (!wakeLock) keepScreenAwake(); });
+    document.addEventListener('touchstart', () => { if (!wakeLock) keepScreenAwake(); }, { passive: true });
+
+    // 2. Vera app-ku poittu thirumba vanthalum automatic-a live-la irukkum
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        keepScreenAwake();
+      }
+    });
+
+    // 3. Theriyama back button / tab close panna udane exit aagama confirmation kekkum
+    window.addEventListener('beforeunload', (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    });
   </script>
 </body>
 </html>
