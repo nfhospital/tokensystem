@@ -396,41 +396,50 @@
         setTimeout(() => { isDisplayingToken = false; }, 1000); // 1s Lock Relax
       }, 10000); 
     }
-    // --- 6. MOBILE SCREEN WAKE LOCK (Screen Off / Lock Aagama Irukka) ---
-    let wakeLock = null;
-
-    async function keepScreenAwake() {
-      if ('wakeLock' in navigator) {
-        try {
-          wakeLock = await navigator.wakeLock.request('screen');
-          console.log('Screen Wake Lock Active');
-
-          wakeLock.addEventListener('release', () => {
-            wakeLock = null;
-          });
-        } catch (err) {
-          console.log('Wake Lock Error:', err.message);
-        }
-      }
-    }
-
-    // 1. App open aagumbothum, screen-a touch pannumbothum auto-lock off aagum
-    window.addEventListener('load', keepScreenAwake);
-    document.addEventListener('click', () => { if (!wakeLock) keepScreenAwake(); });
-    document.addEventListener('touchstart', () => { if (!wakeLock) keepScreenAwake(); }, { passive: true });
-
-    // 2. Vera app-ku poittu thirumba vanthalum automatic-a live-la irukkum
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        keepScreenAwake();
-      }
-    });
-
-    // 3. Theriyama back button / tab close panna udane exit aagama confirmation kekkum
-    window.addEventListener('beforeunload', (e) => {
-      e.preventDefault();
-      e.returnValue = '';
-    });
   </script>
+  <!-- Mobile Screen Status Badge -->
+<div id="awake-badge" style="position:fixed; bottom:12px; right:12px; background:#f59e0b; color:#fff; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:600; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,0.2); cursor:pointer;">
+  💡 Tap screen to keep ON
+</div>
+
+<script>
+  const noSleep = new NoSleep();
+  let wakeLock = null;
+  let isAlwaysOn = false;
+  const badge = document.getElementById('awake-badge');
+
+  async function enableAlwaysOn() {
+    try {
+      // 1. NoSleep (Silent Video Trick - Ella mobile-layum work aagum)
+      noSleep.enable();
+
+      // 2. Native Wake Lock API (Extra Protection)
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      }
+
+      isAlwaysOn = true;
+      badge.innerText = '🟢 Screen Always ON';
+      badge.style.background = '#078c80';
+    } catch (err) {
+      console.log('Awake activation waiting for tap:', err.message);
+    }
+  }
+
+  // Page load aanathum try pannum
+  window.addEventListener('load', enableAlwaysOn);
+
+  // Mobile-la enga oru thadava touch pannalum permanent-a lock aagidum
+  document.addEventListener('click', () => { if (!isAlwaysOn || !wakeLock) enableAlwaysOn(); });
+  document.addEventListener('touchstart', () => { if (!isAlwaysOn || !wakeLock) enableAlwaysOn(); }, { passive: true });
+
+  // Vera app-ku poittu thirumba vanthalum automatic-a ON aagum
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      enableAlwaysOn();
+    }
+  });
+</script>
 </body>
 </html>
